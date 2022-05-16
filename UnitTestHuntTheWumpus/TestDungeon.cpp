@@ -3,6 +3,11 @@
 #include "Dungeon.h"
 
 #include "Cave.h"
+
+#include "Bat.h"
+#include "Pit.h"
+#include "Wumpus.h"
+
 #include "UserNotification.h"
 
 #include "TestHelperTestEnvironment.h"
@@ -36,14 +41,14 @@ namespace TestHuntTheWumpus
         // Verify Bats uniquely distributed
         const auto cave1 = dungeon.FindCave(1);
         const auto cave2 = dungeon.FindCave(2);
-        CHECK(cave1->HasDenizen({HuntTheWumpus::Category::Bat, 0}));
-        CHECK(cave2->HasDenizen({HuntTheWumpus::Category::Bat, 1}));
+        CHECK(cave1->HasDenizen({ HuntTheWumpus::Category::Bat, 0 }));
+        CHECK(cave2->HasDenizen({ HuntTheWumpus::Category::Bat, 1 }));
 
         // Verify Hunter in separate cave.
         const auto cave6 = dungeon.FindCave(6);
-        CHECK(cave6->HasDenizen({HuntTheWumpus::Category::Hunter, 0}));
+        CHECK(cave6->HasDenizen({ HuntTheWumpus::Category::Hunter, 0 }));
 
-             // Verify observations.
+        // Verify observations.
         struct TestExpectation
         {
             int m_caveId;
@@ -78,6 +83,18 @@ namespace TestHuntTheWumpus
         }
     }
 
+    TEST(DungeonSuite, TestDenizenPriorities)
+    {
+        TestEnvironment env;
+
+        HuntTheWumpus::Bat  bat(0, env.m_context);
+        HuntTheWumpus::Pit  pit(0, env.m_context);
+        HuntTheWumpus::Wumpus wumpus(0, env.m_context);
+
+        CHECK(bat.GetPriority() > pit.GetPriority());
+        CHECK(pit.GetPriority() > wumpus.GetPriority());
+    }
+
     TEST(DungeonSuite, Dungeon_MoveRequest_ReportsIllegal)
     {
         TestEnvironment env;
@@ -93,7 +110,7 @@ namespace TestHuntTheWumpus
         env.m_notifier.AddCallback(HuntTheWumpus::UserNotification::Notification::ReportIllegalMove, [&](const int destCave) {
             illegalMoveReported = true;
             caveId = destCave;
-        });
+            });
 
         // We know the Hunter is in cave 5, which doesn't connect to 20.
         dungeon.MakeMove(HuntTheWumpus::DungeonMove::Move, { 20 });
@@ -114,10 +131,10 @@ namespace TestHuntTheWumpus
 
         // The hunter will enter the cave, so we need some defaults.
         env.m_notifier.AddCallback(HuntTheWumpus::UserNotification::Notification::CaveEntered, [&](const int destCave)
-        {
-            caveEnteredCalled = true;
-            caveId = destCave;
-        });
+            {
+                caveEnteredCalled = true;
+                caveId = destCave;
+            });
 
         HuntTheWumpus::Dungeon dungeon(env.m_context);
 
@@ -157,13 +174,13 @@ namespace TestHuntTheWumpus
 
         // And that the Wumpus moved to a new cave. We know that the
         // Wumpus startred in cave 3, and the random move cave was tunnel #0.
-	// However, we don't know the order of the tunnel identifiers,
-	// so we have to look it up be cause it's stored in an unordered map,
-	// and the ordering out of GetConnectedIds() is undefined.
-	const auto cave3 = dungeon.FindCave(3);
-	const auto connectedCaves = cave3->GetConnectedIds();
-	const auto newCaveId = connectedCaves.front();
-	
+    // However, we don't know the order of the tunnel identifiers,
+    // so we have to look it up be cause it's stored in an unordered map,
+    // and the ordering out of GetConnectedIds() is undefined.
+        const auto cave3 = dungeon.FindCave(3);
+        const auto connectedCaves = cave3->GetConnectedIds();
+        const auto newCaveId = connectedCaves.front();
+
         auto cave = dungeon.FindCave(newCaveId);
 
         CHECK(cave->HasDenizen({ HuntTheWumpus::Category::Wumpus , 0 }));
@@ -231,8 +248,8 @@ namespace TestHuntTheWumpus
 
         // Show that we hit the Wumpus!
         CHECK(wumpusShotCalled)
-        CHECK(!env.m_state.m_isPlayingResult);
+            CHECK(!env.m_state.m_isPlayingResult);
         CHECK(env.m_state.m_gameOverCalled);
         CHECK(env.m_state.m_gameOverResult);
-     }
+    }
 }
